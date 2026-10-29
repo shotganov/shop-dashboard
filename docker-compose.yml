@@ -1,0 +1,32 @@
+services:
+  db:
+    image: postgres:17
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres", "-h", "127.0.0.1"]
+      interval: 2s
+      retries: 30
+
+  server:
+    build: ./server
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: shop
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+    ports:
+      - "5000:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+  client:
+    build: ./client
+    ports:
+      - "8080:80"
+    depends_on:
+      - server
